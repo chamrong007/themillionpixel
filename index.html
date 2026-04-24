@@ -3,812 +3,551 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PixelRent · 1,000,000 Pixels · $1 Each</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<title>kh168.ton · Pure Web3 Pixel Grid</title>
+<link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+
+<script>
+  // Auto Theme Detection
+  const savedTheme = localStorage.getItem('theme');
+  const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  if (savedTheme === 'dark' || (!savedTheme && systemDark)) {
+    document.documentElement.setAttribute('data-theme', 'dark');
+  } else {
+    document.documentElement.setAttribute('data-theme', 'light');
+  }
+</script>
+
 <style>
+  /* ── Base Styles ── */
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --bg: #05050a;
-    --surface: #0d0d1a;
-    --card: #12121f;
+    --bg: #f4f5f7; --surface: #ffffff; --card: #ffffff;
+    --border: rgba(0,0,0,0.1);
+    --accent1: #0098EA; /* TON Blue */
+    --accent2: #ffd93d; --accent3: #6bcb77; --accent4: #4ecdc4; --accent5: #c77dff;
+    --text: #11111a; --muted: rgba(0,0,0,0.5);
+    --canvas-bg: #eaeaef; --nav-bg: rgba(255,255,255,0.85); --modal-bg: rgba(255,255,255,0.75);
+    --glow-op: 0.1;
+  }
+
+  [data-theme="dark"] {
+    --bg: #05050a; --surface: #0d0d1a; --card: #12121f;
     --border: rgba(255,255,255,0.08);
-    --accent1: #ff6b6b;
-    --accent2: #ffd93d;
-    --accent3: #6bcb77;
-    --accent4: #4ecdc4;
-    --accent5: #c77dff;
-    --accent6: #4d9de0;
-    --text: #f0f0f0;
-    --muted: rgba(240,240,240,0.5);
+    --text: #f0f0f0; --muted: rgba(240,240,240,0.5);
+    --canvas-bg: #08081a; --nav-bg: rgba(5,5,10,0.7); --modal-bg: rgba(0,0,0,0.75);
+    --glow-op: 0.18;
   }
 
   html { scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--text); font-family: 'Ubuntu', sans-serif; overflow-x: hidden; transition: background-color 0.3s, color 0.3s; }
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'DM Sans', sans-serif;
-    overflow-x: hidden;
-    cursor: crosshair;
+  /* ── Animations & Background ── */
+  #stars { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+  #confetti { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+  
+  .float-pixel {
+    position: absolute; border-radius: 2px; opacity: 0;
+    animation: floatUp linear infinite;
+  }
+  @keyframes floatUp {
+    0% { opacity: 0; transform: translateY(100vh) rotate(0deg); }
+    10% { opacity: 0.6; }
+    90% { opacity: 0.4; }
+    100% { opacity: 0; transform: translateY(-100px) rotate(360deg); }
   }
 
-  /* ── Starfield ── */
-  #stars {
-    position: fixed; inset: 0; pointer-events: none; z-index: 0;
-  }
+  .reveal { opacity: 0; transform: translateY(40px); transition: all 0.8s cubic-bezier(0.5, 0, 0, 1); }
+  .reveal.active { opacity: 1; transform: translateY(0); }
 
   /* ── NAV ── */
   nav {
     position: fixed; top: 0; left: 0; right: 0; z-index: 100;
     display: flex; align-items: center; justify-content: space-between;
-    padding: 1.2rem 3rem;
-    background: rgba(5,5,10,0.7);
-    backdrop-filter: blur(18px);
-    border-bottom: 1px solid var(--border);
+    padding: 1.2rem 3rem; background: var(--nav-bg); backdrop-filter: blur(18px);
+    border-bottom: 1px solid var(--border); transition: all 0.3s;
   }
-  .logo {
-    font-family: 'Syne', sans-serif;
-    font-weight: 800; font-size: 1.5rem;
-    background: linear-gradient(90deg, var(--accent1), var(--accent2), var(--accent4));
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    letter-spacing: -0.03em;
-  }
+  .logo { font-weight: 700; font-size: 1.5rem; background: linear-gradient(90deg, var(--accent1), var(--accent4)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
   .nav-links { display: flex; gap: 2rem; list-style: none; }
-  .nav-links a {
-    color: var(--muted); text-decoration: none; font-size: 0.9rem;
-    transition: color .2s;
-  }
+  .nav-links a { color: var(--muted); text-decoration: none; font-size: 0.9rem; transition: color .2s; font-weight: 500; }
   .nav-links a:hover { color: var(--text); }
-  .nav-btn {
-    background: linear-gradient(135deg, var(--accent1), var(--accent5));
-    color: #fff; border: none; padding: .6rem 1.4rem;
-    border-radius: 100px; font-family: 'DM Sans', sans-serif;
-    font-size: 0.9rem; font-weight: 500; cursor: pointer;
-    transition: transform .2s, opacity .2s;
+  .nav-right { display: flex; align-items: center; gap: 1rem; }
+  #ton-connect { min-width: 150px; }
+
+  .theme-toggle {
+    background: transparent; border: 1px solid var(--border); color: var(--text);
+    width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all 0.3s ease;
   }
-  .nav-btn:hover { transform: scale(1.05); opacity: .9; }
+  .theme-toggle:hover { background: var(--border); }
+  .theme-toggle svg { width: 20px; height: 20px; }
+  [data-theme="dark"] #sun-icon { display: block; }
+  [data-theme="dark"] #moon-icon { display: none; }
+  [data-theme="light"] #sun-icon { display: none; }
+  [data-theme="light"] #moon-icon { display: block; }
 
   /* ── HERO ── */
-  #hero {
-    position: relative; min-height: 100vh;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    text-align: center; padding: 8rem 2rem 4rem;
-    overflow: hidden;
-  }
+  #hero { position: relative; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 8rem 2rem 4rem; z-index: 1; }
+  .hero-glow { position: absolute; border-radius: 50%; filter: blur(120px); opacity: var(--glow-op); animation: drift 8s ease-in-out infinite alternate; pointer-events: none; transition: opacity 0.3s; }
+  .glow-a { width: 500px; height: 500px; background: var(--accent1); top: -100px; left: -100px; animation-delay: 0s; }
+  .glow-b { width: 400px; height: 400px; background: var(--accent5); bottom: -80px; right: -80px; animation-delay: -4s; }
+  @keyframes drift { from { transform: translate(0,0) scale(1); } to { transform: translate(40px, 30px) scale(1.1); } }
 
-  .hero-glow {
-    position: absolute; border-radius: 50%; filter: blur(120px);
-    opacity: 0.18; animation: drift 8s ease-in-out infinite alternate;
-    pointer-events: none;
-  }
-  .glow-a { width: 500px; height: 500px; background: var(--accent5); top: -100px; left: -100px; animation-delay: 0s; }
-  .glow-b { width: 400px; height: 400px; background: var(--accent1); bottom: -80px; right: -80px; animation-delay: -4s; }
-  .glow-c { width: 300px; height: 300px; background: var(--accent4); top: 40%; left: 50%; transform: translate(-50%,-50%); animation-delay: -2s; }
-
-  @keyframes drift {
-    from { transform: translate(0,0) scale(1); }
-    to   { transform: translate(40px, 30px) scale(1.1); }
-  }
-
-  .hero-tag {
-    display: inline-flex; align-items: center; gap: .5rem;
-    background: rgba(255,255,255,0.06); border: 1px solid var(--border);
-    border-radius: 100px; padding: .4rem 1rem; font-size: 0.8rem;
-    color: var(--muted); margin-bottom: 2rem;
-    animation: fadeUp .8s ease forwards; opacity: 0;
-  }
-  .hero-tag .dot {
-    width: 8px; height: 8px; border-radius: 50%;
-    background: var(--accent3);
-    animation: pulse 2s ease-in-out infinite;
-  }
-  @keyframes pulse {
-    0%,100% { opacity:1; transform:scale(1); }
-    50% { opacity:.4; transform:scale(.7); }
-  }
-
-  h1 {
-    font-family: 'Syne', sans-serif;
-    font-size: clamp(3rem, 8vw, 7rem);
-    font-weight: 800; line-height: 1.0;
-    letter-spacing: -0.04em;
-    animation: fadeUp .8s .1s ease forwards; opacity: 0;
-  }
-  h1 .line2 {
-    background: linear-gradient(90deg, var(--accent2), var(--accent1), var(--accent5));
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    background-size: 200%;
-    animation: shimmer 4s linear infinite, fadeUp .8s .1s ease forwards;
-  }
+  h1 { font-size: clamp(3rem, 8vw, 7rem); font-weight: 700; line-height: 1.1; letter-spacing: -0.04em; animation: fadeUp .8s .1s ease forwards; opacity: 0; }
+  h1 .line2 { background: linear-gradient(90deg, var(--accent1), var(--accent4), var(--accent5)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-size: 200%; animation: shimmer 4s linear infinite, fadeUp .8s .1s ease forwards; }
   @keyframes shimmer { to { background-position: 200%; } }
+  .hero-sub { font-size: 1.15rem; color: var(--muted); max-width: 560px; margin: 1.5rem auto 2.5rem; line-height: 1.7; animation: fadeUp .8s .2s ease forwards; opacity: 0; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
 
-  .hero-sub {
-    font-size: 1.15rem; color: var(--muted); max-width: 560px;
-    margin: 1.5rem auto 2.5rem; line-height: 1.7;
-    animation: fadeUp .8s .2s ease forwards; opacity: 0;
-  }
-
-  .hero-ctas {
-    display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center;
-    animation: fadeUp .8s .3s ease forwards; opacity: 0;
-  }
   .btn-primary {
-    background: linear-gradient(135deg, var(--accent1), var(--accent5));
-    color: #fff; border: none; padding: .9rem 2.2rem;
-    border-radius: 100px; font-size: 1rem; font-weight: 500;
-    cursor: pointer; transition: transform .2s, box-shadow .2s;
-    font-family: 'DM Sans', sans-serif;
+    background: linear-gradient(135deg, var(--accent1), var(--accent4)); color: #fff; border: none; padding: .9rem 2.2rem;
+    border-radius: 100px; font-size: 1rem; font-weight: 500; cursor: pointer; transition: transform .3s, box-shadow .3s; font-family: 'Ubuntu', sans-serif;
   }
-  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(255,107,107,.35); }
-  .btn-secondary {
-    background: transparent; color: var(--text);
-    border: 1px solid var(--border); padding: .9rem 2.2rem;
-    border-radius: 100px; font-size: 1rem; cursor: pointer;
-    transition: border-color .2s, background .2s;
-    font-family: 'DM Sans', sans-serif;
-  }
-  .btn-secondary:hover { border-color: rgba(255,255,255,.3); background: rgba(255,255,255,.04); }
+  .btn-primary:hover { transform: translateY(-4px) scale(1.02); box-shadow: 0 15px 40px rgba(0,152,234,.4); }
 
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(24px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-
-  /* ── STATS TICKER ── */
+  /* Stats */
   .stats-bar {
-    display: flex; gap: 3rem; flex-wrap: wrap; justify-content: center;
-    padding: 2.5rem 2rem;
-    border-top: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
-    background: rgba(255,255,255,0.02);
-    animation: fadeUp .8s .5s ease forwards; opacity: 0;
+    display: flex; gap: 3rem; flex-wrap: wrap; justify-content: center; padding: 2.5rem 2rem; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+    background: rgba(255,255,255,0.02); margin-top: 4rem; width: 100%; max-width: 700px; border-radius: 16px; backdrop-filter: blur(10px); animation: fadeUp .8s .5s ease forwards; opacity: 0;
   }
   .stat-item { text-align: center; }
-  .stat-num {
-    font-family: 'Syne', sans-serif; font-size: 2.2rem; font-weight: 800;
-    background: linear-gradient(135deg, var(--accent4), var(--accent5));
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-  }
-  .stat-label { font-size: 0.8rem; color: var(--muted); margin-top: .2rem; }
+  .stat-num { font-size: 2.2rem; font-weight: 700; background: linear-gradient(135deg, var(--accent1), var(--accent5)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .stat-label { font-size: 0.8rem; color: var(--muted); margin-top: .2rem; text-transform: uppercase; letter-spacing: 1px;}
 
-  /* ── PIXEL GRID SECTION ── */
-  #grid-section {
-    padding: 5rem 2rem;
-    max-width: 1200px; margin: 0 auto;
-  }
-  .section-header {
-    text-align: center; margin-bottom: 3rem;
-  }
-  .section-tag {
-    display: inline-block; font-size: 0.75rem; font-weight: 500;
-    letter-spacing: .1em; text-transform: uppercase;
-    color: var(--accent4); margin-bottom: .8rem;
-  }
-  .section-title {
-    font-family: 'Syne', sans-serif; font-size: clamp(1.8rem, 4vw, 3rem);
-    font-weight: 800; letter-spacing: -0.03em; margin-bottom: .8rem;
-  }
+  /* ── GRID SECTION ── */
+  #grid-section { padding: 5rem 2rem; max-width: 1200px; margin: 0 auto; position: relative; z-index: 1; }
+  .section-header { text-align: center; margin-bottom: 3rem; }
+  .section-title { font-size: clamp(1.8rem, 4vw, 3rem); font-weight: 700; letter-spacing: -0.03em; margin-bottom: .8rem; }
   .section-sub { color: var(--muted); font-size: 0.95rem; }
 
-  /* Color picker & tools */
-  .grid-tools {
-    display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
-    margin-bottom: 1.5rem; padding: 1rem 1.2rem;
-    background: var(--card); border: 1px solid var(--border);
-    border-radius: 14px;
-  }
-  .tool-label { font-size: 0.8rem; color: var(--muted); white-space: nowrap; }
-  .color-swatches { display: flex; gap: .5rem; flex-wrap: wrap; }
-  .swatch {
-    width: 26px; height: 26px; border-radius: 6px;
-    cursor: pointer; border: 2px solid transparent;
-    transition: transform .15s, border-color .15s;
-  }
+  .grid-tools { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem; padding: 1rem 1.2rem; background: var(--card); border: 1px solid var(--border); border-radius: 14px; }
+  .tool-label { font-size: 0.8rem; color: var(--muted); }
+  .color-swatches { display: flex; gap: .5rem; }
+  .swatch { width: 26px; height: 26px; border-radius: 6px; cursor: pointer; border: 2px solid transparent; transition: transform .3s; }
   .swatch:hover { transform: scale(1.2); }
-  .swatch.active { border-color: #fff; }
+  .swatch.active { border-color: var(--text); transform: scale(1.15); }
   .tool-sep { width: 1px; height: 28px; background: var(--border); }
-  #brushSize {
-    appearance: none; width: 80px; height: 4px;
-    background: var(--border); border-radius: 2px; outline: none;
-  }
-  #brushSize::-webkit-slider-thumb {
-    appearance: none; width: 14px; height: 14px;
-    border-radius: 50%; background: var(--accent4); cursor: pointer;
-  }
-  .grid-info {
-    font-size: 0.8rem; color: var(--muted); margin-left: auto;
-  }
-  .grid-info span { color: var(--accent2); font-weight: 500; }
-
-  /* Canvas wrapper */
-  .canvas-wrap {
-    position: relative; border-radius: 16px; overflow: hidden;
-    border: 1px solid var(--border);
-    box-shadow: 0 0 80px rgba(78,205,196,.06);
-  }
-  #pixelCanvas {
-    display: block; width: 100%; cursor: crosshair;
-    image-rendering: pixelated;
-  }
-  .canvas-overlay-text {
-    position: absolute; bottom: 1rem; right: 1rem;
-    font-size: 0.75rem; color: rgba(255,255,255,.3);
-    pointer-events: none;
-  }
-
-  /* ── LINK MODAL ── */
-  #modal-backdrop {
-    display: none; position: fixed; inset: 0; z-index: 200;
-    background: rgba(0,0,0,.75); backdrop-filter: blur(8px);
-    align-items: center; justify-content: center;
-  }
-  #modal-backdrop.open { display: flex; }
-  .modal {
-    background: var(--card); border: 1px solid var(--border);
-    border-radius: 20px; padding: 2rem; width: min(480px, 90vw);
-    animation: modalIn .25s ease;
-  }
-  @keyframes modalIn {
-    from { opacity:0; transform: scale(.94) translateY(20px); }
-    to   { opacity:1; transform: scale(1) translateY(0); }
-  }
-  .modal h3 {
-    font-family: 'Syne', sans-serif; font-size: 1.4rem;
-    font-weight: 700; margin-bottom: .4rem;
-  }
-  .modal p { color: var(--muted); font-size: .9rem; margin-bottom: 1.5rem; }
-  .modal label { display: block; font-size: .8rem; color: var(--muted); margin-bottom: .4rem; }
-  .modal input {
-    width: 100%; background: rgba(255,255,255,.05);
-    border: 1px solid var(--border); border-radius: 10px;
-    padding: .75rem 1rem; color: var(--text); font-size: .95rem;
-    font-family: 'DM Sans', sans-serif; outline: none; margin-bottom: 1rem;
-    transition: border-color .2s;
-  }
-  .modal input:focus { border-color: var(--accent4); }
-  .modal-actions { display: flex; gap: .75rem; justify-content: flex-end; }
-  .modal-cancel {
-    background: transparent; border: 1px solid var(--border);
-    color: var(--muted); padding: .65rem 1.4rem; border-radius: 100px;
-    cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: .9rem;
-    transition: border-color .2s;
-  }
-  .modal-cancel:hover { border-color: rgba(255,255,255,.3); }
-  .modal-save {
-    background: linear-gradient(135deg, var(--accent4), var(--accent5));
-    border: none; color: #fff; padding: .65rem 1.6rem;
-    border-radius: 100px; cursor: pointer;
-    font-family: 'DM Sans', sans-serif; font-size: .9rem; font-weight: 500;
-    transition: transform .15s;
-  }
-  .modal-save:hover { transform: scale(1.04); }
-
-  /* Pixel tooltip */
-  #tooltip {
-    position: fixed; z-index: 150; pointer-events: none;
-    background: var(--card); border: 1px solid var(--border);
-    border-radius: 10px; padding: .55rem .9rem;
-    font-size: .8rem; display: none; max-width: 240px;
-    word-break: break-all;
-  }
-  #tooltip .tt-coord { color: var(--muted); margin-bottom: .2rem; }
-  #tooltip .tt-link { color: var(--accent4); }
-  #tooltip .tt-empty { color: var(--muted); font-style: italic; }
+  
+  .canvas-wrap { position: relative; border-radius: 16px; overflow: hidden; border: 1px solid var(--border); box-shadow: 0 0 80px rgba(0,152,234,.06); transition: transform 0.4s; }
+  .canvas-wrap:hover { transform: translateY(-5px); box-shadow: 0 15px 90px rgba(0,152,234,.15); }
+  #pixelCanvas { display: block; width: 100%; cursor: crosshair; image-rendering: pixelated; background-color: var(--canvas-bg); transition: background-color 0.3s; }
 
   /* ── HOW IT WORKS ── */
-  #how {
-    padding: 5rem 2rem;
-    background: linear-gradient(180deg, transparent, rgba(255,255,255,.02), transparent);
-  }
-  .steps {
-    max-width: 900px; margin: 3rem auto 0;
-    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1.5rem;
-  }
-  .step-card {
+  #how { padding: 5rem 2rem; max-width: 1100px; margin: 0 auto; position: relative; z-index: 1; }
+  .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; margin-top: 3rem; }
+  .step-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 2rem; transition: transform .3s, border-color .3s; }
+  .step-card:hover { transform: translateY(-5px); border-color: var(--accent1); }
+  .step-num { font-size: 2.5rem; font-weight: 700; margin-bottom: 1rem; color: var(--accent1); opacity: 0.5; }
+  .step-card h4 { font-size: 1.1rem; font-weight: 700; margin-bottom: .5rem; }
+  .step-card p { font-size: .9rem; color: var(--muted); line-height: 1.6; }
+
+  /* ── MODAL ── */
+  #modal-backdrop { display: none; position: fixed; inset: 0; z-index: 200; background: var(--modal-bg); backdrop-filter: blur(8px); align-items: center; justify-content: center; }
+  #modal-backdrop.open { display: flex; }
+  .modal { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 2rem; width: min(480px, 90vw); transform: scale(0.9); opacity: 0; transition: all 0.3s; }
+  #modal-backdrop.open .modal { transform: scale(1); opacity: 1; }
+  .modal h3 { font-size: 1.4rem; font-weight: 700; margin-bottom: .4rem; }
+  .modal p { color: var(--muted); font-size: .9rem; margin-bottom: 1.5rem; }
+  .modal input { width: 100%; background: rgba(128,128,128,.05); border: 1px solid var(--border); border-radius: 10px; padding: .75rem 1rem; color: var(--text); margin-bottom: 1rem; outline: none; font-family: 'Ubuntu', sans-serif; }
+  .modal input:focus { border-color: var(--accent1); }
+  .modal-actions { display: flex; gap: .75rem; justify-content: flex-end; }
+  .modal-cancel { background: transparent; border: 1px solid var(--border); color: var(--muted); padding: .65rem 1.4rem; border-radius: 100px; cursor: pointer; font-family: 'Ubuntu', sans-serif; }
+  .modal-save { background: linear-gradient(135deg, var(--accent1), var(--accent4)); border: none; color: #fff; padding: .65rem 1.6rem; border-radius: 100px; cursor: pointer; font-weight: 500; font-family: 'Ubuntu', sans-serif; }
+
+  /* ── TOOLTIP & RECENT ACTIVITY ── */
+  #pixel-tooltip {
+    position: fixed; z-index: 300; pointer-events: none;
     background: var(--card); border: 1px solid var(--border);
-    border-radius: 16px; padding: 1.5rem;
-    transition: border-color .25s, transform .25s;
+    border-radius: 12px; padding: 1rem;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    color: var(--text); font-size: 0.85rem;
+    opacity: 0; transform: scale(0.9) translateY(10px);
+    transition: opacity 0.2s, transform 0.2s;
+    min-width: 150px; max-width: 250px; word-wrap: break-word;
   }
-  .step-card:hover { border-color: rgba(255,255,255,.2); transform: translateY(-4px); }
-  .step-num {
-    font-family: 'Syne', sans-serif; font-size: 2.5rem;
-    font-weight: 800; margin-bottom: .75rem; line-height: 1;
-  }
-  .step-card:nth-child(1) .step-num { color: var(--accent1); }
-  .step-card:nth-child(2) .step-num { color: var(--accent2); }
-  .step-card:nth-child(3) .step-num { color: var(--accent3); }
-  .step-card:nth-child(4) .step-num { color: var(--accent4); }
-  .step-card h4 { font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 700; margin-bottom: .4rem; }
-  .step-card p { font-size: .875rem; color: var(--muted); line-height: 1.6; }
+  #pixel-tooltip.visible { opacity: 1; transform: scale(1) translateY(0); }
+  .tt-coord { color: var(--accent4); font-weight: 700; margin-bottom: 6px; font-size: 0.75rem; letter-spacing: 1px; }
+  .tt-label { font-weight: 500; font-size: 1.1rem; margin-bottom: 6px; line-height: 1.4; display: flex; align-items: center; gap: 8px; }
+  .tt-url { color: var(--muted); font-size: 0.8rem; text-decoration: none; word-break: break-all; }
 
-  /* ── FOOTER ── */
-  footer {
-    text-align: center; padding: 3rem 2rem;
-    border-top: 1px solid var(--border);
-    color: var(--muted); font-size: .85rem;
+  #recent-activity {
+    position: fixed; bottom: 20px; left: 20px; z-index: 150;
+    display: flex; flex-direction: column; gap: 10px;
+    pointer-events: none;
   }
-  footer strong { color: var(--text); }
+  .activity-toast {
+    background: rgba(18, 18, 31, 0.85); backdrop-filter: blur(10px);
+    border: 1px solid var(--border); padding: 0.8rem 1.2rem;
+    border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+    display: flex; align-items: center; gap: 10px;
+    animation: toastSlide 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards, fadeOut 0.5s 4.5s forwards;
+    font-size: 0.85rem; color: #f0f0f0;
+  }
+  [data-theme="light"] .activity-toast { background: rgba(255, 255, 255, 0.85); color: #11111a; }
+  .toast-color { width: 14px; height: 14px; border-radius: 4px; flex-shrink: 0; }
+  @keyframes toastSlide { from { opacity: 0; transform: translateX(-50px) scale(0.9); } to { opacity: 1; transform: translateX(0) scale(1); } }
+  @keyframes fadeOut { to { opacity: 0; transform: translateY(-10px); } }
 
-  /* ── Floating pixels (confetti) ── */
-  .float-pixel {
-    position: fixed; border-radius: 2px; pointer-events: none;
-    animation: floatUp linear infinite; z-index: 0; opacity: 0;
-  }
-  @keyframes floatUp {
-    0%   { opacity: 0; transform: translateY(0) rotate(0deg); }
-    10%  { opacity: .7; }
-    90%  { opacity: .5; }
-    100% { opacity: 0; transform: translateY(-100vh) rotate(360deg); }
-  }
-
-  /* ── Scrollbar ── */
-  ::-webkit-scrollbar { width: 6px; }
-  ::-webkit-scrollbar-track { background: var(--bg); }
-  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  footer { text-align: center; padding: 3rem 2rem; border-top: 1px solid var(--border); color: var(--muted); font-size: .85rem; position: relative; z-index: 1; }
 </style>
 </head>
 <body>
 
-<!-- Floating confetti pixels -->
+<!-- Animated Background Elements -->
+<canvas id="stars"></canvas>
 <div id="confetti"></div>
 
-<!-- Stars canvas -->
-<canvas id="stars"></canvas>
-
-<!-- NAV -->
 <nav>
-  <div class="logo">PixelRent</div>
+  <div class="logo">kh168.ton</div>
   <ul class="nav-links">
     <li><a href="#grid-section">The Grid</a></li>
     <li><a href="#how">How It Works</a></li>
-    <li><a href="#grid-section">Pricing</a></li>
   </ul>
-  <button class="nav-btn" onclick="document.getElementById('grid-section').scrollIntoView({behavior:'smooth'})">Claim Pixels</button>
+  <div class="nav-right">
+    <button id="theme-toggle" class="theme-toggle" aria-label="Toggle Theme">
+      <svg id="sun-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+      <svg id="moon-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+    </button>
+    <div id="ton-connect"></div>
+  </div>
 </nav>
 
-<!-- HERO -->
 <section id="hero">
   <div class="hero-glow glow-a"></div>
   <div class="hero-glow glow-b"></div>
-  <div class="hero-glow glow-c"></div>
 
-  <div class="hero-tag">
-    <span class="dot"></span>
-    <span id="liveCount">247,831</span> pixels still available
-  </div>
+  <h1>kh168.ton Grid<br><span class="line2">Your Space on Web3.</span></h1>
+  <p class="hero-sub">Pick any pixel. Paint it. Embed your link. <strong>1 TON per pixel</strong> — stored permanently on the TON Blockchain.</p>
+  <button class="btn-primary" onclick="document.getElementById('grid-section').scrollIntoView({behavior:'smooth'})">✦ Claim Your Pixels</button>
 
-  <h1>
-    One Million Pixels.<br>
-    <span class="line2">Your Space. Your Link.</span>
-  </h1>
-
-  <p class="hero-sub">
-    Pick any pixel. Paint it your color. Embed your link.
-    <strong>$1 per pixel</strong> — forever on the grid. The internet's most creative billboard.
-  </p>
-
-  <div class="hero-ctas">
-    <button class="btn-primary" onclick="document.getElementById('grid-section').scrollIntoView({behavior:'smooth'})">
-      ✦ Claim Your Pixels
-    </button>
-    <button class="btn-secondary" onclick="document.getElementById('how').scrollIntoView({behavior:'smooth'})">
-      How It Works
-    </button>
-  </div>
-
-  <!-- Stats bar -->
-  <div class="stats-bar" style="margin-top: 4rem; width: 100%; max-width: 700px; border-radius: 16px; border: 1px solid var(--border);">
-    <div class="stat-item">
-      <div class="stat-num" id="statSold">752,169</div>
-      <div class="stat-label">Pixels Sold</div>
-    </div>
-    <div class="stat-item">
-      <div class="stat-num" id="statAvail">247,831</div>
-      <div class="stat-label">Available</div>
-    </div>
-    <div class="stat-item">
-      <div class="stat-num">$1</div>
-      <div class="stat-label">Per Pixel</div>
-    </div>
-    <div class="stat-item">
-      <div class="stat-num" id="statLinks">8,420</div>
-      <div class="stat-label">Embedded Links</div>
-    </div>
+  <div class="stats-bar reveal">
+    <div class="stat-item"><div class="stat-num" id="statSold">0</div><div class="stat-label">Pixels Sold</div></div>
+    <div class="stat-item"><div class="stat-num" id="statAvail">1,000,000</div><div class="stat-label">Available</div></div>
+    <div class="stat-item"><div class="stat-num">1 TON</div><div class="stat-label">Per Pixel</div></div>
   </div>
 </section>
 
-<!-- PIXEL GRID -->
 <section id="grid-section">
-  <div style="max-width: 1100px; margin: 0 auto; padding: 5rem 2rem;">
-    <div class="section-header">
-      <div class="section-tag">The Grid</div>
-      <h2 class="section-title">1,000,000 Pixels · Paint & Link</h2>
-      <p class="section-sub">Click to pick, drag to paint. Right-click any pixel to embed your URL.</p>
-    </div>
+  <div class="section-header reveal">
+    <h2 class="section-title">The Blockchain Grid</h2>
+    <p class="section-sub">Select your tool below. Paint to draw, Link to add your website to the smart contract.</p>
+  </div>
 
-    <div class="grid-tools">
-      <span class="tool-label">Color:</span>
-      <div class="color-swatches" id="swatches"></div>
-      <div class="tool-sep"></div>
-      <span class="tool-label">Brush:</span>
-      <input type="range" id="brushSize" min="1" max="8" value="2">
-      <div class="tool-sep"></div>
-      <span class="tool-label">Mode:</span>
-      <button id="modeToggle" style="background:rgba(255,255,255,.06);border:1px solid var(--border);color:var(--text);padding:.3rem .9rem;border-radius:8px;cursor:pointer;font-size:.8rem;font-family:'DM Sans',sans-serif;">Paint</button>
-      <div class="grid-info">Selected: <span id="selInfo">none</span></div>
-    </div>
+  <div class="grid-tools reveal">
+    <span class="tool-label">Color:</span>
+    <div class="color-swatches" id="swatches"></div>
+    <div class="tool-sep"></div>
+    <span class="tool-label">Mode:</span>
+    <button id="modeToggle" style="background:transparent;border:1px solid var(--border);color:var(--text);padding:.4rem 1rem;border-radius:8px;cursor:pointer;font-family:'Ubuntu',sans-serif;">Paint</button>
+  </div>
 
-    <div class="canvas-wrap">
-      <canvas id="pixelCanvas"></canvas>
-      <div class="canvas-overlay-text">1000 × 1000 px · zoom with scroll</div>
-    </div>
-    <p style="font-size:.8rem;color:var(--muted);margin-top:.75rem;text-align:center;">
-      Right-click on any pixel to embed a link. Drag to paint. Scroll to zoom.
-    </p>
+  <div class="canvas-wrap reveal">
+    <canvas id="pixelCanvas"></canvas>
   </div>
 </section>
 
-<!-- HOW IT WORKS -->
+<!-- HOW IT WORKS SECTION -->
 <section id="how">
-  <div style="max-width: 1100px; margin: 0 auto;">
-    <div class="section-header">
-      <div class="section-tag">Simple Process</div>
-      <h2 class="section-title">How It Works</h2>
-      <p class="section-sub">Four steps to own your slice of internet history.</p>
+  <div class="section-header reveal">
+    <h2 class="section-title">How It Works</h2>
+    <p class="section-sub">100% decentralized. Fully on-chain.</p>
+  </div>
+  <div class="steps reveal">
+    <div class="step-card">
+      <div class="step-num">01</div>
+      <h4>Connect Wallet</h4>
+      <p>Link your Tonkeeper or Telegram wallet securely via TON Connect.</p>
     </div>
-    <div class="steps">
-      <div class="step-card">
-        <div class="step-num">01</div>
-        <h4>Pick Your Pixels</h4>
-        <p>Click and drag on the grid to select the area you want. Any size, any location.</p>
-      </div>
-      <div class="step-card">
-        <div class="step-num">02</div>
-        <h4>Choose Your Color</h4>
-        <p>Paint your pixels any color. Make your block stand out from the crowd.</p>
-      </div>
-      <div class="step-card">
-        <div class="step-num">03</div>
-        <h4>Embed Your Link</h4>
-        <p>Right-click to add your URL — website, social profile, product page, anything.</p>
-      </div>
-      <div class="step-card">
-        <div class="step-num">04</div>
-        <h4>Go Live Forever</h4>
-        <p>Pay $1 per pixel once. Your spot stays on the grid permanently. No subscriptions.</p>
-      </div>
+    <div class="step-card">
+      <div class="step-num">02</div>
+      <h4>Pick & Paint</h4>
+      <p>Draw your block on the grid. Choose your brand colors and reserve your space.</p>
+    </div>
+    <div class="step-card">
+      <div class="step-num">03</div>
+      <h4>Embed Link & Pay</h4>
+      <p>Add your website URL. A smart contract transaction requests 1 TON directly to the host address.</p>
+    </div>
+    <div class="step-card">
+      <div class="step-num">04</div>
+      <h4>Live Forever</h4>
+      <p>Once the block is confirmed, your pixel data is written to the TON blockchain permanently.</p>
     </div>
   </div>
 </section>
-
-<!-- FOOTER -->
-<footer>
-  <div class="logo" style="display:inline-block;margin-bottom:.5rem;">PixelRent</div>
-  <p>The original million pixel homepage · <strong>$1 per pixel · forever</strong></p>
-  <p style="margin-top:.5rem;font-size:.75rem;">© 2025 PixelRent · Built with creativity and coffee ✦</p>
-</footer>
 
 <!-- MODAL -->
 <div id="modal-backdrop">
   <div class="modal">
-    <h3>✦ Embed Your Link</h3>
-    <p>Add a URL to pixel <span id="modal-coord" style="color:var(--accent4);"></span>. Visitors will be redirected when they click.</p>
-    <label>Your URL</label>
-    <input type="url" id="modal-url" placeholder="https://your-website.com" />
-    <label>Label (optional)</label>
+    <h3>✦ Reserve & Link</h3>
+    <p>Add a URL to pixel <span id="modal-coord" style="color:var(--accent4);"></span>. <br><br><strong>Cost: 1 TON</strong></p>
+    <label style="font-size: 0.8rem; color: var(--muted); font-family: 'Ubuntu', sans-serif;">Your URL</label>
+    <input type="url" id="modal-url" placeholder="https://your-project.com" />
+    <label style="font-size: 0.8rem; color: var(--muted); font-family: 'Ubuntu', sans-serif;">Label (optional)</label>
     <input type="text" id="modal-label" placeholder="My awesome project" />
     <div class="modal-actions">
       <button class="modal-cancel" onclick="closeModal()">Cancel</button>
-      <button class="modal-save" onclick="saveLink()">Save Link ✦</button>
+      <button class="modal-save" onclick="processPaymentAndSave()">Pay 1 TON Live Forever</button>
     </div>
   </div>
 </div>
 
-<!-- TOOLTIP -->
-<div id="tooltip">
-  <div class="tt-coord" id="tt-coord"></div>
-  <div id="tt-content"></div>
-</div>
+<footer>
+  <div class="logo" style="display:inline-block;margin-bottom:.5rem;">kh168.ton</div>
+  <p>© 2026 kh168.ton · Pure Web3 Advertising</p>
+</footer>
+
+<!-- Tooltip & Activity Containers -->
+<div id="pixel-tooltip"></div>
+<div id="recent-activity"></div>
 
 <script>
-// ── STARS ──────────────────────────────────
-(function(){
-  const c = document.getElementById('stars');
-  const ctx = c.getContext('2d');
-  function resize(){ c.width = window.innerWidth; c.height = window.innerHeight; draw(); }
-  function draw(){
-    ctx.clearRect(0,0,c.width,c.height);
-    for(let i=0;i<200;i++){
-      const x = Math.random()*c.width, y = Math.random()*c.height;
-      const r = Math.random()*1.2;
-      ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2);
-      ctx.fillStyle = `rgba(255,255,255,${Math.random()*.6+.1})`;
-      ctx.fill();
-    }
+// ── LIVE ANIMATIONS (Confetti & Stars) ──
+const confettiContainer = document.getElementById('confetti');
+const colors = ['#0098EA', '#ff6b6b','#ffd93d','#6bcb77','#c77dff'];
+for(let i=0; i<30; i++) {
+  let pixel = document.createElement('div');
+  pixel.classList.add('float-pixel');
+  pixel.style.left = Math.random() * 100 + 'vw';
+  pixel.style.background = colors[Math.floor(Math.random() * colors.length)];
+  let size = Math.random() * 6 + 4;
+  pixel.style.width = size + 'px';
+  pixel.style.height = size + 'px';
+  pixel.style.animationDuration = (Math.random() * 10 + 10) + 's';
+  pixel.style.animationDelay = (Math.random() * 10) + 's';
+  confettiContainer.appendChild(pixel);
+}
+
+const c = document.getElementById('stars');
+const ctx = c.getContext('2d');
+function drawStars(){
+  c.width = window.innerWidth; c.height = window.innerHeight;
+  ctx.clearRect(0,0,c.width,c.height);
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  for(let i=0;i<100;i++){
+    ctx.beginPath(); ctx.arc(Math.random()*c.width, Math.random()*c.height, Math.random()*1.5, 0, Math.PI*2);
+    ctx.fillStyle = isDark ? `rgba(255,255,255,${Math.random()*.5})` : `rgba(0,0,0,${Math.random()*.2})`; 
+    ctx.fill();
   }
-  resize();
-  window.addEventListener('resize', resize);
-})();
+}
+window.addEventListener('resize', drawStars); drawStars();
 
-// ── CONFETTI ───────────────────────────────
-(function(){
-  const colors = ['#ff6b6b','#ffd93d','#6bcb77','#4ecdc4','#c77dff','#4d9de0'];
-  const wrap = document.getElementById('confetti');
-  for(let i=0;i<28;i++){
-    const el = document.createElement('div');
-    el.className = 'float-pixel';
-    const sz = Math.random()*8+3;
-    el.style.cssText = `
-      width:${sz}px;height:${sz}px;
-      background:${colors[Math.floor(Math.random()*colors.length)]};
-      left:${Math.random()*100}vw;
-      bottom:-20px;
-      animation-duration:${Math.random()*12+8}s;
-      animation-delay:${Math.random()*10}s;
-    `;
-    wrap.appendChild(el);
-  }
-})();
+// ── THEME & SCROLL REVEAL ──
+document.getElementById('theme-toggle').addEventListener('click', () => {
+  const newTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', newTheme);
+  localStorage.setItem('theme', newTheme);
+  drawStars();
+});
 
-// ── LIVE COUNTER ANIMATION ─────────────────
-(function(){
-  let sold = 752169;
-  setInterval(()=>{
-    const inc = Math.floor(Math.random()*3);
-    sold += inc;
-    const avail = 1000000 - sold;
-    document.getElementById('statSold').textContent = sold.toLocaleString();
-    document.getElementById('statAvail').textContent = avail.toLocaleString();
-    document.getElementById('liveCount').textContent = avail.toLocaleString();
-  }, 3000);
-})();
+const revealObserver = new IntersectionObserver(entries => {
+  entries.forEach(entry => { if(entry.isIntersecting) entry.target.classList.add('active'); });
+}, { threshold: 0.1 });
+document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
 
-// ── PIXEL CANVAS ───────────────────────────
-const COLS = 500, ROWS = 500; // 500x500 display = represents 1000x1000 logical
-const PIXEL_DATA = {}; // key: "x,y" → {color, url, label}
+// ── ANIMATE STATS COUNTER ──
+function animateValue(id, start, end, duration) {
+    if (start === end) return;
+    let obj = document.getElementById(id);
+    let startTimestamp = null;
+    const step = (timestamp) => {
+        if (!startTimestamp) startTimestamp = timestamp;
+        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+        obj.innerHTML = Math.floor(progress * (end - start) + start).toLocaleString();
+        if (progress < 1) { window.requestAnimationFrame(step); }
+    };
+    window.requestAnimationFrame(step);
+}
+// Simulate existing blockchain data loading
+setTimeout(() => {
+    animateValue("statSold", 0, 14250, 2000);
+    animateValue("statAvail", 1000000, 985750, 2000);
+}, 500);
+
+// ── TON CONNECT ──
+const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
+    manifestUrl: 'https://kh168.ton/tonconnect-manifest.json',
+    buttonRootId: 'ton-connect'
+});
+
+// ── PIXEL CANVAS LOGIC ──
+const COLS = 500, ROWS = 500; 
 const canvas = document.getElementById('pixelCanvas');
-const ctx = canvas.getContext('2d');
+const canvasCtx = canvas.getContext('2d');
+canvas.width = COLS; canvas.height = ROWS;
 
-const COLORS = ['#ff6b6b','#ffd93d','#6bcb77','#4ecdc4','#c77dff','#4d9de0','#ff9f43','#ee5a24','#0652dd','#ffffff'];
-let activeColor = COLORS[0];
-let brushSize = 2;
-let mode = 'paint'; // 'paint' or 'link'
+const PIXEL_DATA = {}; // To store painted pixel info
+let activeColor = colors[0];
+let mode = 'paint';
 let isPainting = false;
 
-// Setup canvas
-function setupCanvas(){
-  canvas.width = COLS;
-  canvas.height = ROWS;
-  fillBackground();
-  prefillPixels();
+// Pre-fill some mock pixels with multi-language labels
+function mintMockPixel(x, y, color, url, label) {
+  PIXEL_DATA[`${x},${y}`] = { color, url, label };
+  canvasCtx.fillStyle = color;
+  canvasCtx.fillRect(x, y, 2, 2);
 }
+setTimeout(() => {
+  mintMockPixel(150, 100, '#ff6b6b', 'https://ton.org', 'TON Foundation 💎');
+  mintMockPixel(249, 172, '#4ecdc4', 'https://konit.club', 'こんにちは World! 🇯🇵');
+  mintMockPixel(300, 200, '#ffd93d', 'https://t.me/kh168', 'مرحبا بك في kh168 🚀');
+  mintMockPixel(100, 350, '#c77dff', 'https://web3.com', 'Web3 ជារៀងរហូត 🇰🇭');
+}, 100);
 
-function fillBackground(){
-  ctx.fillStyle = '#08081a';
-  ctx.fillRect(0,0,COLS,ROWS);
-  // subtle grid
-  ctx.strokeStyle = 'rgba(255,255,255,0.03)';
-  ctx.lineWidth = 0.5;
-  for(let x=0;x<COLS;x+=10){
-    ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,ROWS); ctx.stroke();
-  }
-  for(let y=0;y<ROWS;y+=10){
-    ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(COLS,y); ctx.stroke();
-  }
-}
-
-function prefillPixels(){
-  // Simulate existing sold pixels
-  const regions = [
-    {x:20,y:15,w:80,h:50,color:'#ff6b6b',url:'https://example.com',label:'Example Co'},
-    {x:120,y:30,w:60,h:40,color:'#4ecdc4',url:'https://shop.com',label:'Shop Now'},
-    {x:200,y:10,w:100,h:60,color:'#c77dff',url:'https://startup.io',label:'Startup.io'},
-    {x:320,y:20,w:70,h:45,color:'#ffd93d',url:'https://agency.co',label:'Design Agency'},
-    {x:50,y:100,w:90,h:55,color:'#6bcb77',url:'https://green.org',label:'Go Green'},
-    {x:160,y:90,w:50,h:60,color:'#4d9de0',url:'https://tech.com',label:'Tech Blog'},
-    {x:240,y:100,w:80,h:40,color:'#ff9f43',url:'https://food.co',label:'FoodCo'},
-    {x:350,y:80,w:100,h:80,color:'#ee5a24',url:'https://game.dev',label:'GameDev'},
-    {x:30,y:180,w:120,h:70,color:'#0652dd',url:'https://saas.app',label:'SaaS App'},
-    {x:200,y:170,w:60,h:50,color:'#c77dff',url:'https://music.fm',label:'Music.fm'},
-    {x:280,y:180,w:80,h:65,color:'#ffd93d',url:'https://news.site',label:'Daily News'},
-    {x:400,y:160,w:70,h:55,color:'#6bcb77',url:'https://eco.co',label:'Eco Brand'},
-  ];
-  regions.forEach(r => {
-    ctx.fillStyle = r.color;
-    ctx.fillRect(r.x, r.y, r.w, r.h);
-    for(let px=r.x;px<r.x+r.w;px++){
-      for(let py=r.y;py<r.y+r.h;py++){
-        PIXEL_DATA[`${px},${py}`] = {color:r.color, url:r.url, label:r.label};
-      }
-    }
-  });
-
-  // Random sparse pixels
-  for(let i=0;i<3000;i++){
-    const px = Math.floor(Math.random()*COLS);
-    const py = Math.floor(Math.random()*ROWS);
-    const c = COLORS[Math.floor(Math.random()*COLORS.length)];
-    ctx.fillStyle = c;
-    ctx.fillRect(px,py,1,1);
-    PIXEL_DATA[`${px},${py}`] = {color:c, url:'', label:''};
-  }
-}
-
-setupCanvas();
-
-// Color swatches
+// Setup Swatches
 const swatchContainer = document.getElementById('swatches');
-COLORS.forEach((c, i) => {
+[...colors, '#ffffff'].forEach((color, i) => {
   const s = document.createElement('div');
   s.className = 'swatch' + (i===0?' active':'');
-  s.style.background = c;
-  if(c==='#ffffff') s.style.border = '2px solid rgba(255,255,255,.3)';
-  s.onclick = () => {
-    document.querySelectorAll('.swatch').forEach(el=>el.classList.remove('active'));
-    s.classList.add('active');
-    activeColor = c;
-  };
+  s.style.background = color;
+  s.onclick = () => { document.querySelectorAll('.swatch').forEach(el=>el.classList.remove('active')); s.classList.add('active'); activeColor = color; };
   swatchContainer.appendChild(s);
 });
 
-document.getElementById('brushSize').oninput = function(){ brushSize = +this.value; };
-
+// Mode Toggle
 const modeBtn = document.getElementById('modeToggle');
 modeBtn.onclick = () => {
   mode = mode === 'paint' ? 'link' : 'paint';
   modeBtn.textContent = mode === 'paint' ? 'Paint' : 'Link';
-  modeBtn.style.borderColor = mode === 'link' ? 'var(--accent4)' : 'var(--border)';
-  modeBtn.style.color = mode === 'link' ? 'var(--accent4)' : 'var(--text)';
   canvas.style.cursor = mode === 'link' ? 'pointer' : 'crosshair';
 };
 
-// Canvas coords helper
+// Canvas Drawing
 function getPixel(e){
   const rect = canvas.getBoundingClientRect();
-  const scaleX = COLS / rect.width;
-  const scaleY = ROWS / rect.height;
-  const x = Math.floor((e.clientX - rect.left) * scaleX);
-  const y = Math.floor((e.clientY - rect.top) * scaleY);
+  const x = Math.floor((e.clientX - rect.left) * (COLS / rect.width));
+  const y = Math.floor((e.clientY - rect.top) * (ROWS / rect.height));
   return {x: Math.max(0,Math.min(COLS-1,x)), y: Math.max(0,Math.min(ROWS-1,y))};
 }
 
-function paintAt(x, y){
-  const b = brushSize;
-  const half = Math.floor(b/2);
-  for(let dx=0;dx<b;dx++){
-    for(let dy=0;dy<b;dy++){
-      const px = x - half + dx;
-      const py = y - half + dy;
-      if(px<0||px>=COLS||py<0||py>=ROWS) continue;
-      ctx.fillStyle = activeColor;
-      ctx.fillRect(px,py,1,1);
-      if(!PIXEL_DATA[`${px},${py}`]) PIXEL_DATA[`${px},${py}`] = {};
-      PIXEL_DATA[`${px},${py}`].color = activeColor;
-    }
-  }
-  document.getElementById('selInfo').textContent = `(${x}, ${y})`;
-}
-
+const tooltip = document.getElementById('pixel-tooltip');
 canvas.addEventListener('mousedown', e => {
-  if(e.button !== 0) return;
-  if(mode === 'paint'){ isPainting = true; const p = getPixel(e); paintAt(p.x, p.y); }
+  if(mode === 'paint') { isPainting = true; const p = getPixel(e); canvasCtx.fillStyle = activeColor; canvasCtx.fillRect(p.x, p.y, 2, 2); }
 });
 canvas.addEventListener('mousemove', e => {
-  if(isPainting && mode === 'paint'){ const p = getPixel(e); paintAt(p.x, p.y); }
-  showTooltip(e);
-});
-canvas.addEventListener('mouseup', () => isPainting = false);
-canvas.addEventListener('mouseleave', () => { isPainting = false; hideTooltip(); });
-
-canvas.addEventListener('click', e => {
-  if(mode === 'link'){
-    const p = getPixel(e);
-    openModal(p.x, p.y);
-  }
-});
-
-canvas.addEventListener('contextmenu', e => {
-  e.preventDefault();
   const p = getPixel(e);
-  openModal(p.x, p.y);
-});
-
-// Zoom
-let zoom = 1;
-canvas.addEventListener('wheel', e => {
-  e.preventDefault();
-  zoom = Math.max(0.5, Math.min(4, zoom + (e.deltaY < 0 ? 0.15 : -0.15)));
-  canvas.style.transform = `scale(${zoom})`;
-  canvas.style.transformOrigin = 'top left';
-}, {passive:false});
-
-// ── TOOLTIP ────────────────────────────────
-const tooltip = document.getElementById('tooltip');
-function showTooltip(e){
-  const p = getPixel(e);
-  const key = `${p.x},${p.y}`;
-  const data = PIXEL_DATA[key];
-  document.getElementById('tt-coord').textContent = `Pixel (${p.x * 2}, ${p.y * 2})`;
-  const content = document.getElementById('tt-content');
-  if(data && data.url){
-    content.innerHTML = `<div class="tt-link">🔗 ${data.label || data.url}</div><div style="font-size:.75rem;color:var(--muted);margin-top:.2rem;">${data.url}</div>`;
-  } else if(data && data.color) {
-    content.innerHTML = `<div style="display:flex;align-items:center;gap:.4rem;"><div style="width:10px;height:10px;border-radius:2px;background:${data.color}"></div><span style="color:var(--muted)">Painted — no link</span></div>`;
+  if(isPainting && mode === 'paint'){ canvasCtx.fillStyle = activeColor; canvasCtx.fillRect(p.x, p.y, 2, 2); }
+  
+  // Tooltip Logic
+  const snapX = Math.floor(p.x / 2) * 2; // Assuming 2x2 brush
+  const snapY = Math.floor(p.y / 2) * 2;
+  const data = PIXEL_DATA[`${p.x},${p.y}`] || PIXEL_DATA[`${p.x-1},${p.y}`] || PIXEL_DATA[`${p.x},${p.y-1}`] || PIXEL_DATA[`${p.x-1},${p.y-1}`] || PIXEL_DATA[`${snapX},${snapY}`];
+  
+  if (data) {
+    tooltip.innerHTML = `
+      <div class="tt-coord">Pixel (${p.x}, ${p.y})</div>
+      <div class="tt-label"><div class="toast-color" style="background:${data.color}"></div> ${data.label || 'Reserved Pixel'}</div>
+      <div class="tt-url">${data.url}</div>
+    `;
+    tooltip.style.left = (e.clientX + 15) + 'px';
+    tooltip.style.top = (e.clientY + 15) + 'px';
+    tooltip.classList.add('visible');
   } else {
-    content.innerHTML = `<div class="tt-empty">Available · $1</div>`;
+    tooltip.classList.remove('visible');
   }
-  tooltip.style.display = 'block';
-  tooltip.style.left = (e.clientX + 14) + 'px';
-  tooltip.style.top  = (e.clientY + 14) + 'px';
-}
-function hideTooltip(){ tooltip.style.display = 'none'; }
+});
+canvas.addEventListener('mouseleave', () => { isPainting = false; tooltip.classList.remove('visible'); });
 
-// ── MODAL ──────────────────────────────────
+// ── PURE WEB3 MODAL & PAYMENTS ──
 let modalPixel = null;
+canvas.addEventListener('contextmenu', e => { e.preventDefault(); const p = getPixel(e); openModal(p.x, p.y); });
+canvas.addEventListener('click', e => { if(mode === 'link'){ const p = getPixel(e); openModal(p.x, p.y); } });
+
 function openModal(x, y){
   modalPixel = {x, y};
-  document.getElementById('modal-coord').textContent = `(${x*2}, ${y*2})`;
-  const existing = PIXEL_DATA[`${x},${y}`];
-  document.getElementById('modal-url').value = existing?.url || '';
-  document.getElementById('modal-label').value = existing?.label || '';
+  const cost = 1; // 1 block = 1 TON
+  document.getElementById('modal-coord').textContent = `(${x}, ${y})`;
+  document.getElementById('modal-url').value = '';
+  document.getElementById('modal-label').value = '';
+  document.querySelector('.modal-save').innerText = `Pay ${cost} TON Live Forever`;
   document.getElementById('modal-backdrop').classList.add('open');
 }
+
 function closeModal(){
   document.getElementById('modal-backdrop').classList.remove('open');
   modalPixel = null;
 }
-function saveLink(){
+
+async function processPaymentAndSave(){
   if(!modalPixel) return;
-  const url = document.getElementById('modal-url').value.trim();
-  const label = document.getElementById('modal-label').value.trim();
+  const url = document.getElementById('modal-url').value;
+  const label = document.getElementById('modal-label').value;
   const {x, y} = modalPixel;
-  const key = `${x},${y}`;
-  if(!PIXEL_DATA[key]) PIXEL_DATA[key] = {color: activeColor};
-  PIXEL_DATA[key].url = url;
-  PIXEL_DATA[key].label = label;
-  // Paint the pixel to show it's claimed
-  ctx.fillStyle = activeColor;
-  ctx.fillRect(x, y, 1, 1);
-  // Show a small "link" indicator
-  ctx.fillStyle = 'rgba(255,255,255,0.5)';
-  ctx.fillRect(x, y, 1, 1);
 
-  // Update link counter
-  const links = document.getElementById('statLinks');
-  links.textContent = (parseInt(links.textContent.replace(',','')) + 1).toLocaleString();
-  closeModal();
-}
-
-document.getElementById('modal-backdrop').addEventListener('click', e => {
-  if(e.target === document.getElementById('modal-backdrop')) closeModal();
-});
-
-// ── Animate stat numbers on scroll ─────────
-function animateNum(el, target, duration=1500){
-  const start = parseInt(el.textContent.replace(/,/g,'')) || 0;
-  const startTime = performance.now();
-  function step(now){
-    const t = Math.min((now - startTime) / duration, 1);
-    const ease = 1 - Math.pow(1-t, 3);
-    el.textContent = Math.round(start + (target - start) * ease).toLocaleString();
-    if(t < 1) requestAnimationFrame(step);
+  if (!tonConnectUI.connected) {
+      alert("Please connect your TON wallet using the button in the top right first!");
+      return;
   }
-  requestAnimationFrame(step);
+
+  try {
+      const saveBtn = document.querySelector('.modal-save');
+      saveBtn.innerText = "Approve in Wallet...";
+      saveBtn.disabled = true;
+
+      // ── PURE WEB3 BLOCKCHAIN TRANSACTION ──
+      // This sends 1 TON directly to your address and embeds the pixel data inside the blockchain transaction memo!
+      const payloadString = `PIXEL_MINT:${x},${y}:${activeColor}:${url}:${label}`;
+      
+      const transaction = {
+          validUntil: Math.floor(Date.now() / 1000) + 120, // 2 minutes
+          messages: [
+              {
+                  address: "EQBIVrhBUiawT3nQ_-Vl1shqrwB7-oXPyWzc62IMv6c1lwnV", // Your linked kh168.ton wallet!
+                  amount: "1000000000", // 1 TON
+                  // In a fully decentralized dApp, the data is attached as a payload message for indexers to read later.
+                  payload: btoa(payloadString) 
+              }
+          ]
+      };
+
+      await tonConnectUI.sendTransaction(transaction);
+
+      // On success: update visual grid
+      canvasCtx.fillStyle = activeColor;
+      canvasCtx.fillRect(x, y, 2, 2);
+      
+      alert("Success! Your pixel data has been submitted to the TON Blockchain.");
+      saveBtn.innerText = "Pay 1 TON Live Forever";
+      saveBtn.disabled = false;
+      closeModal();
+
+      // Show animation for newly minted pixel
+      showActivityToast(x, y, activeColor, label || "New Project");
+      PIXEL_DATA[`${x},${y}`] = { color: activeColor, url, label };
+
+  } catch (e) {
+      console.error(e);
+      alert("Payment failed or cancelled by user.");
+      const saveBtn = document.querySelector('.modal-save');
+      saveBtn.innerText = "Pay 1 TON Live Forever";
+      saveBtn.disabled = false;
+  }
 }
-const obs = new IntersectionObserver(entries => {
-  entries.forEach(e => {
-    if(e.isIntersecting){
-      animateNum(document.getElementById('statSold'), 752169);
-      animateNum(document.getElementById('statAvail'), 247831);
-      animateNum(document.getElementById('statLinks'), 8420);
-      obs.disconnect();
-    }
-  });
-}, {threshold:.3});
-obs.observe(document.querySelector('.stats-bar'));
+
+// ── RECENT ACTIVITY SIMULATOR ──
+const activityContainer = document.getElementById('recent-activity');
+function showActivityToast(x, y, color, label) {
+  const toast = document.createElement('div');
+  toast.className = 'activity-toast';
+  toast.innerHTML = `<div class="toast-color" style="background:${color}"></div> <span><b>${label}</b> minted at (${x}, ${y})</span>`;
+  activityContainer.appendChild(toast);
+  setTimeout(() => { if(toast.parentNode) toast.remove(); }, 5000);
+}
+
+// Simulate other people minting live
+setInterval(() => {
+   if(Math.random() > 0.6) {
+      const rx = Math.floor(Math.random() * COLS);
+      const ry = Math.floor(Math.random() * ROWS);
+      const rc = colors[Math.floor(Math.random() * colors.length)];
+      const labels = ['Crypto Ninja 🥷', 'Ton Whale 🐳', 'Web3 Builder 🚀', 'Khmer Dev 🇰🇭', 'DeFi King 👑'];
+      const rl = labels[Math.floor(Math.random() * labels.length)];
+      
+      mintMockPixel(rx, ry, rc, '#', rl);
+      showActivityToast(rx, ry, rc, rl);
+   }
+}, 4500);
 </script>
 </body>
 </html>
